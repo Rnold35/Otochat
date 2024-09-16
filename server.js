@@ -10,9 +10,10 @@ app.use(cors());
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: process.env.CLIENT_URL,
-    methods: ['GET', 'POST'],
-  },
+    origin: [process.env.CLIENT_URL, "https://your-domain.com"],
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 console.log('Server initialized');
 // Queue and interest storage
