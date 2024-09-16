@@ -3,6 +3,7 @@ import type { NextApiRequest, NextApiResponse } from 'next';
 import { Server as NetServer } from 'http';
 import { Socket as NetSocket } from 'net';
 
+
 interface SocketServer extends NetServer {
   io?: Server;
 }
@@ -51,7 +52,9 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
 
   const socket = res.socket as SocketWithIO;
 
-  if (!socket.server.io) {
+  if (socket.server.io) {
+    console.log('Socket.IO server is already running');
+  } else {
     console.log('Initializing Socket.IO server...');
     const io = new Server(socket.server);
     socket.server.io = io;
@@ -177,13 +180,11 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     // Broadcast to everyone else in the room that this user stopped typing
     socket.to(room).emit('user stopped typing');
   });
-
+  
     });
-  } else {
-    console.log('Socket.IO server is already running.');
-  }
-  res.end();
-}
+  } 
+  res.status(200).json({ message: 'Socket.IO server is running' });
+};
 
 
 // Function to check for matches and pair users
