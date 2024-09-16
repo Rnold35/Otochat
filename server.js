@@ -1,25 +1,38 @@
-const { createServer } = require('http');
-const next = require('next');
+const express = require('express');
+const http = require('http');
 const { Server } = require('socket.io');
+const cors = require('cors');
+require('dotenv').config();
 
-const dev = process.env.NODE_ENV !== 'production';
-const app = next({ dev });
-const handle = app.getRequestHandler();
+const app = express();
+app.use(cors());
 
-// Port number
-const PORT = process.env.PORT || 3000;
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL,
+    methods: ['GET', 'POST'],
+  },
+});
+console.log('Server initialized');
+// Queue and interest storage
+const queue = [];
+const activeRooms = new Map();
 
-app.prepare().then(() => {
-  const server = createServer(handle);
-  const io = new Server(server);
-  
-  // Use a more efficient data structure for rooms and queue
-  const rooms = new Map();
-  const queue = new Set();
-  const interests = new Map();
+const disconnectUsersInRoom = (io, room) => {
+  const usersInRoom = io.sockets.adapter.rooms.get(room);
+  if (usersInRoom) {
+    for (const socketId of usersInRoom) {
+      const socket = io.sockets.sockets.get(socketId);
+      if (socket) {
+        socket.disconnect(true);
+      }
+    }
+  }
+};
 
-  io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
 
     // Combine room creation and joining
     socket.on('join or create room', (room) => {
@@ -308,5 +321,7 @@ app.prepare().then(() => {
     }
   }
 
-  // ... server listen ...
+const PORT = process.env.PORT || 3001;
+server.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
